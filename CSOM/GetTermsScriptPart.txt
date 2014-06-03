@@ -1,0 +1,64 @@
+<label for="termStoreId">Term Store ID</label>
+<input id="termStoreId" type="text" style="width:250px;" placeholder="Enter your term store guid"/>
+<label for="termSetId">Term Set ID</label>
+<input id="termSetId" type="text" style="width:250px;" placeholder="Enter your term set guid"/>
+<button type="button" onclick="getTerms();">Get terms</button>
+<button type="button" onclick="clearTerms();">Clear</button>
+
+<script>
+function getTerms() {
+	
+    var context = SP.ClientContext.get_current();
+    var taxSession = SP.Taxonomy.TaxonomySession.getTaxonomySession(context);
+    var termStores = taxSession.get_termStores();
+    var termStore = termStores.getByName(document.getElementById("termStoreId").value);
+    var termSet = termStore.getTermSet(document.getElementById("termSetId").value);
+    var terms = termSet.getAllTerms();
+    context.load(terms);
+	context.load(termSet);
+    context.executeQueryAsync(function () {
+		var count = 0;
+        var termEnumerator = terms.getEnumerator();
+        var companies = '<table><tr><td><b>Terms</b></td></tr>';
+        while (termEnumerator.moveNext()) {
+			count++
+            var currentTerm = termEnumerator.get_current();
+            companies += '<tr><td>' + currentTerm.get_name() + '</td></tr>';
+        }
+        companies += '</table>';
+		companies += '<br><span style="color:red">(' + count + ' terms found)</span>';
+        document.getElementById("terms").innerHTML = companies;
+
+
+    }, function (sender, args) {
+		document.getElementById("terms").innerHTML = args.get_message();
+		document.getElementById("terms").innerHTML = "<br><span style='color: green'>Ready to find terms!</span>";
+    });
+
+}
+function clearTerms() {
+		document.getElementById("terms").innerHTML = "<span style='color: green'>Ready to find terms!</span>";
+		document.getElementById("termStoreId").value = "";
+		document.getElementById("termSetId").value = "";
+}
+
+document.onreadystatechange = function () {
+	if(document.readyState == "complete") {
+		var spjs = document.createElement('script')
+		spjs.setAttribute("type","text/javascript")
+		spjs.setAttribute("src", "/_layouts/15/sp.js")
+		
+		var spruntimejs = document.createElement('script')
+		spruntimejs.setAttribute("type","text/javascript")
+		spruntimejs.setAttribute("src", "/_layouts/15/sp.runtime.js")
+		
+		var sptaxonomyjs = document.createElement('script')
+		sptaxonomyjs.setAttribute("type","text/javascript")
+		sptaxonomyjs.setAttribute("src", "/_layouts/15/sp.taxonomy.js")
+		
+		document.getElementById("terms").innerHTML = "<span style='color: green'>Ready to find terms!</span>";
+	}   
+}
+</script>
+
+<div id="terms"></div>
